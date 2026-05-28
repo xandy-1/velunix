@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 
 import "./globals.css";
 
+import { Providers } from "./providers";
+
 export const metadata: Metadata = {
   metadataBase: new URL(
     "http://localhost:3000"
@@ -36,7 +38,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body>{children}</body>
+      <body>
+  <Providers>
+    {children}
+  </Providers>
+</body>
     </html>
   );
 }

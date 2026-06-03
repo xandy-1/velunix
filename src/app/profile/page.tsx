@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { usePostHog } from "posthog-js/react";
+
 import { Navbar } from "@/components/layout/navbar";
 import { ProfileSkeleton } from "@/components/profile/profile-skeleton";
 
@@ -17,6 +19,8 @@ type UserProfile = {
 };
 
 export default function ProfilePage() {
+  const posthog = usePostHog();
+
   const [user, setUser] =
     useState<UserProfile | null>(null);
 
@@ -88,6 +92,12 @@ export default function ProfilePage() {
 
       alert("Erro ao sair.");
     }
+  }
+
+  function handleFeedbackClick() {
+    posthog.capture("feedback_clicked", {
+      source: "profile_page",
+    });
   }
 
   if (loading) {
@@ -223,6 +233,7 @@ export default function ProfilePage() {
                       href={FEEDBACK_URL}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={handleFeedbackClick}
                       className="rounded-full bg-white px-5 py-3 text-center text-sm font-semibold text-black transition hover:scale-105 hover:bg-zinc-200"
                     >
                       Enviar feedback

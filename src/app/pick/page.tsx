@@ -12,6 +12,8 @@ import {
   useSearchParams,
 } from "next/navigation";
 
+import { usePostHog } from "posthog-js/react";
+
 import {
   AnimatePresence,
   motion,
@@ -99,66 +101,65 @@ function clamp(
 function PickContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const posthog = usePostHog();
 
-  // Evita execução dupla no Strict Mode durante desenvolvimento.
   const hasLoadedMovies = useRef(false);
 
-  const rawRating =
-    parseNumberParam(
-      searchParams.get("rating"),
-      6
-    );
+  const rawRating = parseNumberParam(
+    searchParams.get("rating"),
+    6
+  );
 
   const rating =
     rawRating >= 0 && rawRating <= 10
       ? rawRating
       : 6;
 
-const genre = parseNumberParam(
-  searchParams.get("genre")
-);
+  const genre = parseNumberParam(
+    searchParams.get("genre")
+  );
 
-const provider = parseNumberParam(
-  searchParams.get("provider")
-);
+  const provider = parseNumberParam(
+    searchParams.get("provider")
+  );
 
-const minRuntime = searchParams.get("minRuntime")
-  ? clamp(
-      parseNumberParam(searchParams.get("minRuntime")),
-      0,
-      400
-    )
-  : 0;
+  const minRuntime = searchParams.get("minRuntime")
+    ? clamp(
+        parseNumberParam(searchParams.get("minRuntime")),
+        0,
+        400
+      )
+    : 0;
 
-const maxRuntime = searchParams.get("maxRuntime")
-  ? clamp(
-      parseNumberParam(searchParams.get("maxRuntime")),
-      0,
-      400
-    )
-  : 0;
+  const maxRuntime = searchParams.get("maxRuntime")
+    ? clamp(
+        parseNumberParam(searchParams.get("maxRuntime")),
+        0,
+        400
+      )
+    : 0;
 
-const currentYear = new Date().getFullYear();
+  const currentYear = new Date().getFullYear();
 
-const minYear = searchParams.get("minYear")
-  ? clamp(
-      parseNumberParam(searchParams.get("minYear")),
-      1888,
-      currentYear
-    )
-  : 0;
+  const minYear = searchParams.get("minYear")
+    ? clamp(
+        parseNumberParam(searchParams.get("minYear")),
+        1888,
+        currentYear
+      )
+    : 0;
 
-const maxYear = searchParams.get("maxYear")
-  ? clamp(
-      parseNumberParam(searchParams.get("maxYear")),
-      1888,
-      currentYear
-    )
-  : 0;
+  const maxYear = searchParams.get("maxYear")
+    ? clamp(
+        parseNumberParam(searchParams.get("maxYear")),
+        1888,
+        currentYear
+      )
+    : 0;
 
-const movieIdFromUrl = parseNumberParam(
-  searchParams.get("movieId")
-);
+  const movieIdFromUrl = parseNumberParam(
+    searchParams.get("movieId")
+  );
 
   const [movies, setMovies] = useState<Movie[]>([]);
   const [movie, setMovie] = useState<Movie | null>(null);
@@ -197,6 +198,25 @@ const movieIdFromUrl = parseNumberParam(
     params.set("movieId", String(movieId));
 
     router.replace(`/pick?${params.toString()}`);
+  }
+
+  function trackMoviePicked(
+    selectedMovie: Movie,
+    source: "initial" | "reroll"
+  ) {
+    posthog.capture("movie_picked", {
+      source,
+      movie_id: selectedMovie.id,
+      movie_title: selectedMovie.title,
+      rating,
+      genre_id: genre || null,
+      provider_id: provider || null,
+      min_runtime: minRuntime || null,
+      max_runtime: maxRuntime || null,
+      min_year: minYear || null,
+      max_year: maxYear || null,
+      is_authenticated: isAuthenticated,
+    });
   }
 
   async function getAvailableMovies() {
@@ -239,7 +259,6 @@ const movieIdFromUrl = parseNumberParam(
           return;
         }
 
-        // Se a URL tem movieId, restaura exatamente esse filme.
         if (movieIdFromUrl) {
           try {
             const restoredMovie =
@@ -290,6 +309,11 @@ const movieIdFromUrl = parseNumberParam(
           authenticated,
           true
         );
+
+        trackMoviePicked(
+          randomMovie,
+          "initial"
+        );
       } catch (error) {
         console.error(
           "Erro ao carregar filmes:",
@@ -333,7 +357,6 @@ const movieIdFromUrl = parseNumberParam(
       addSeenMovieId(selectedMovie.id);
     }
 
-    // Estados do usuário: remoto para logado, local para guest.
     if (authenticated) {
       const [remoteFavorite, remoteWatched] =
         await Promise.all([
@@ -353,7 +376,6 @@ const movieIdFromUrl = parseNumberParam(
       );
     }
 
-    // Limpa dados do filme anterior antes de buscar os novos.
     setDuration(0);
     setAgeRating("Livre");
     setTrailerKey("");
@@ -398,7 +420,6 @@ const movieIdFromUrl = parseNumberParam(
     availableMovies =
       filterUnseenMovies(availableMovies);
 
-    // Quando a página veio só com movieId, ainda não existe pool local.
     if (availableMovies.length === 0) {
       availableMovies =
         await getAvailableMovies();
@@ -430,6 +451,11 @@ const movieIdFromUrl = parseNumberParam(
       isAuthenticated,
       true
     );
+
+    trackMoviePicked(
+      randomMovie,
+      "reroll"
+    );
   }
 
   async function handleToggleFavorite() {
@@ -447,6 +473,17 @@ const movieIdFromUrl = parseNumberParam(
         await toggleFavoriteMovieRemote(movie.id);
 
       setIsFavorite(result);
+
+      posthog.capture(
+        result
+          ? "movie_favorited"
+          : "movie_unfavorited",
+        {
+          movie_id: movie.id,
+          movie_title: movie.title,
+          rating: movie.vote_average,
+        }
+      );
     } catch (error) {
       console.error(error);
     }
@@ -467,6 +504,17 @@ const movieIdFromUrl = parseNumberParam(
         await toggleWatchedMovieRemote(movie.id);
 
       setIsWatched(result);
+
+      posthog.capture(
+        result
+          ? "movie_marked_watched"
+          : "movie_unmarked_watched",
+        {
+          movie_id: movie.id,
+          movie_title: movie.title,
+          rating: movie.vote_average,
+        }
+      );
     } catch (error) {
       console.error(error);
     }
@@ -566,7 +614,6 @@ const movieIdFromUrl = parseNumberParam(
             >
               ← Voltar aos filtros
             </AppButton>
-            
           </motion.div>
         </AnimatePresence>
 

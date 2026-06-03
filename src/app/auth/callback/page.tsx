@@ -10,12 +10,17 @@ import {
   useSearchParams,
 } from "next/navigation";
 
+import { usePostHog } from "posthog-js/react";
+
 import { supabase } from "@/lib/supabase";
 
 function AuthCallbackContent() {
   const router = useRouter();
+
   const searchParams =
     useSearchParams();
+
+  const posthog = usePostHog();
 
   useEffect(() => {
     async function finishLogin() {
@@ -23,16 +28,26 @@ function AuthCallbackContent() {
         searchParams.get("code");
 
       if (code) {
-        await supabase.auth.exchangeCodeForSession(
-          code
-        );
+        const { data, error } =
+          await supabase.auth.exchangeCodeForSession(
+            code
+          );
+
+        if (!error && data.session) {
+          posthog.capture(
+            "login_completed",
+            {
+              provider: "magic_link",
+            }
+          );
+        }
       }
 
       router.replace("/");
     }
 
     finishLogin();
-  }, [router, searchParams]);
+  }, [router, searchParams, posthog]);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-black text-white">

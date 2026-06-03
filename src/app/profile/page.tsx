@@ -9,6 +9,8 @@ import { supabase } from "@/lib/supabase";
 
 import { signOut } from "@/services/auth";
 
+const FEEDBACK_URL = "https://tally.so/r/javVBa";
+
 type UserProfile = {
   email?: string;
   created_at?: string;
@@ -202,6 +204,29 @@ export default function ProfilePage() {
                     <p className="text-3xl font-black">
                       {watchedCount}
                     </p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-zinc-900/50 p-5">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <h2 className="text-lg font-bold text-white">
+                        💡 Enviar sugestão
+                      </h2>
+
+                      <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+                        Ajude a melhorar o Velunix. Compartilhe ideias, relate problemas ou sugira novas funcionalidades.
+                      </p>
+                    </div>
+
+                    <a
+                      href={FEEDBACK_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-full bg-white px-5 py-3 text-center text-sm font-semibold text-black transition hover:scale-105 hover:bg-zinc-200"
+                    >
+                      Enviar feedback
+                    </a>
                   </div>
                 </div>
 

@@ -35,9 +35,9 @@ function AuthCallbackContent() {
 
         if (!error && data.session) {
           posthog.capture(
-            "login_completed",
+            "user_signed_in",
             {
-              provider: "magic_link",
+              method: "magic_link",
             }
           );
         }

@@ -2,40 +2,53 @@ import { MovieTrailer } from "@/types/movie";
 
 import { tmdbFetch } from "./client";
 
-import { MovieVideosResponse } from "./types";
+import {
+  ContentType,
+  getTmdbContentType,
+  MovieVideosResponse,
+} from "./types";
 
 async function fetchVideos(
-  movieId: number,
+  contentId: number,
+  contentType: ContentType,
   language: string
 ): Promise<MovieTrailer[]> {
+  const tmdbType =
+    getTmdbContentType(
+      contentType
+    );
+
   const data =
     await tmdbFetch<MovieVideosResponse>(
-      `/movie/${movieId}/videos?language=${language}`
+      `/${tmdbType}/${contentId}/videos?language=${language}`
     );
 
   return data.results;
 }
 
-export async function getMovieTrailer(
-  movieId: number
+export async function getContentTrailer(
+  contentId: number,
+  contentType: ContentType
 ): Promise<MovieTrailer | null> {
-  if (!movieId) {
+  if (!contentId) {
     throw new Error(
-      "Movie ID is required"
+      "Content ID is required"
     );
   }
 
-  const ptVideos =
-    await fetchVideos(
-      movieId,
-      "pt-BR"
-    );
-
-  const enVideos =
-    await fetchVideos(
-      movieId,
-      "en-US"
-    );
+  const [ptVideos, enVideos] =
+    await Promise.all([
+      fetchVideos(
+        contentId,
+        contentType,
+        "pt-BR"
+      ),
+      fetchVideos(
+        contentId,
+        contentType,
+        "en-US"
+      ),
+    ]);
 
   const allVideos = [
     ...ptVideos,
@@ -69,11 +82,11 @@ export async function getMovieTrailer(
     return validTrailers[0];
   }
 
-  const teaser = allVideos.find(
-    (video) =>
-      video.site === "YouTube" &&
-      video.type === "Teaser"
+  return (
+    allVideos.find(
+      (video) =>
+        video.site === "YouTube" &&
+        video.type === "Teaser"
+    ) || null
   );
-
-  return teaser || null;
 }

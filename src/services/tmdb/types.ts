@@ -5,7 +5,21 @@ import {
   MovieTrailer,
 } from "@/types/movie";
 
+export type ContentType =
+  | "movie"
+  | "tv"
+  | "anime";
+
+  export function getTmdbContentType(
+    type: ContentType
+  ) {
+    return type === "movie"
+      ? "movie"
+      : "tv";
+  }
+  
 export type DiscoverMoviesParams = {
+  contentType?: ContentType;
   minRating: number;
   genreId?: number | null;
   providerId?: number | null;
@@ -32,3 +46,4 @@ export type MovieDetailsResponse =
 export type MovieVideosResponse = {
   results: MovieTrailer[];
 };
+

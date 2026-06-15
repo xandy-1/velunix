@@ -13,6 +13,7 @@ export async function discoverMovies(
   params: DiscoverMoviesParams
 ): Promise<Movie[]> {
   const {
+    contentType = "movie",
     minRating,
     genreId,
     providerId,
@@ -22,11 +23,17 @@ export async function discoverMovies(
     maxYear,
   } = params;
 
+  const tmdbType =
+    contentType === "tv" ||
+    contentType === "anime"
+      ? "tv"
+      : "movie";
+
   const minimumVoteCount =
     providerId ? 0 : 80;
 
   let endpoint =
-    `/discover/movie?language=pt-BR&sort_by=popularity.desc&vote_count.gte=${minimumVoteCount}&vote_average.gte=${minRating}`;
+    `/discover/${tmdbType}?language=pt-BR&sort_by=popularity.desc&vote_count.gte=${minimumVoteCount}&vote_average.gte=${minRating}`;
 
   if (genreId) {
     endpoint += `&with_genres=${genreId}`;
@@ -37,24 +44,48 @@ export async function discoverMovies(
       `&with_watch_providers=${providerId}&watch_region=BR`;
   }
 
-  if (minRuntime) {
+  if (contentType === "anime") {
+    endpoint +=
+      "&with_original_language=ja";
+
+    endpoint +=
+      "&with_genres=16";
+  }
+
+  if (
+    contentType === "movie" &&
+    minRuntime
+  ) {
     endpoint +=
       `&with_runtime.gte=${minRuntime}`;
   }
 
-  if (maxRuntime) {
+  if (
+    contentType === "movie" &&
+    maxRuntime
+  ) {
     endpoint +=
       `&with_runtime.lte=${maxRuntime}`;
   }
 
   if (minYear) {
+    const dateField =
+      tmdbType === "tv"
+        ? "first_air_date"
+        : "primary_release_date";
+
     endpoint +=
-      `&primary_release_date.gte=${minYear}-01-01`;
+      `&${dateField}.gte=${minYear}-01-01`;
   }
 
   if (maxYear) {
+    const dateField =
+      tmdbType === "tv"
+        ? "first_air_date"
+        : "primary_release_date";
+
     endpoint +=
-      `&primary_release_date.lte=${maxYear}-12-31`;
+      `&${dateField}.lte=${maxYear}-12-31`;
   }
 
   const pages = Array.from(

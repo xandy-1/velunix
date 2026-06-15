@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { usePostHog } from "posthog-js/react";
 
 import { AppButton } from "@/components/ui/button";
 
@@ -32,6 +33,7 @@ type MovieCardProps = {
 };
 
 export function MovieCard({
+  movieId,
   title,
   description,
   rating,
@@ -46,6 +48,29 @@ export function MovieCard({
   onToggleWatched,
   onReroll,
 }: MovieCardProps) {
+  const posthog = usePostHog();
+
+  function trackTrailerOpened() {
+    posthog.capture("trailer_opened", {
+      movie_id: movieId,
+      movie_title: title,
+      rating,
+    });
+  }
+
+  function trackWatchProviderClicked() {
+    posthog.capture("watch_provider_clicked", {
+      movie_id: movieId,
+      movie_title: title,
+      rating,
+      available_providers:
+        watchProviders?.flatrate?.map(
+          (provider) =>
+            provider.provider_name
+        ) || [],
+    });
+  }
+
   return (
     <motion.article
       key={title}
@@ -114,6 +139,7 @@ export function MovieCard({
                 href={watchProviders.link}
                 variant="secondary"
                 className="w-full text-center"
+                onClick={trackWatchProviderClicked}
               >
                 📺 Ver onde assistir
               </AppButton>
@@ -127,6 +153,7 @@ export function MovieCard({
                 href={trailerUrl}
                 variant="danger"
                 className="flex-1 text-center"
+                onClick={trackTrailerOpened}
               >
                 🎬 Trailer
               </AppButton>

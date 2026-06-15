@@ -2,24 +2,35 @@ import { MovieWatchProvidersResult } from "@/types/movie";
 
 import { tmdbFetch } from "./client";
 
+import {
+  ContentType,
+  getTmdbContentType,
+} from "./types";
+
 type WatchProvidersResponse = {
   results: {
     BR?: MovieWatchProvidersResult;
   };
 };
 
-export async function getMovieWatchProviders(
-  movieId: number
+export async function getContentWatchProviders(
+  contentId: number,
+  contentType: ContentType
 ): Promise<MovieWatchProvidersResult | null> {
-  if (!movieId) {
+  if (!contentId) {
     throw new Error(
-      "Movie ID is required"
+      "Content ID is required"
     );
   }
 
+  const tmdbType =
+    getTmdbContentType(
+      contentType
+    );
+
   const data =
     await tmdbFetch<WatchProvidersResponse>(
-      `/movie/${movieId}/watch/providers`
+      `/${tmdbType}/${contentId}/watch/providers`
     );
 
   return data.results.BR || null;

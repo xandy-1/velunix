@@ -2,23 +2,44 @@ import { MovieDetails } from "@/types/movie";
 
 import { tmdbFetch } from "./client";
 
-export async function getMovieDetails(
-  movieId: number
+import {
+  ContentType,
+  getTmdbContentType,
+} from "./types";
+
+export async function getContentDetails(
+  contentId: number,
+  contentType: ContentType
 ): Promise<MovieDetails> {
-  if (!movieId) {
+  if (!contentId) {
     throw new Error(
-      "Movie ID is required"
+      "Content ID is required"
     );
   }
 
+  const tmdbType =
+    getTmdbContentType(
+      contentType
+    );
+
   const details =
     await tmdbFetch<any>(
-      `/movie/${movieId}?language=pt-BR`
+      `/${tmdbType}/${contentId}?language=pt-BR`
     );
+
+  if (tmdbType === "tv") {
+    return {
+      id: details.id,
+      runtime:
+        details.episode_run_time?.[0] ||
+        0,
+      ageRating: "Livre",
+    };
+  }
 
   const releaseDates =
     await tmdbFetch<any>(
-      `/movie/${movieId}/release_dates`
+      `/movie/${contentId}/release_dates`
     );
 
   function findCertification(
@@ -39,31 +60,7 @@ export async function getMovieDetails(
     );
   }
 
-  function normalizeCertification(
-    certification: string | null
-  ): string {
-    const map: Record<
-      string,
-      string
-    > = {
-      G: "Livre",
-      PG: "10",
-      "PG-13": "13",
-      R: "16",
-      "NC-17": "18",
-    };
-
-    if (!certification) {
-      return "Livre";
-    }
-
-    return (
-      map[certification] ||
-      certification
-    );
-  }
-
-  const rawCertification =
+  const certification =
     findCertification("BR") ||
     findCertification("US") ||
     "Livre";
@@ -71,9 +68,6 @@ export async function getMovieDetails(
   return {
     id: details.id,
     runtime: details.runtime,
-    ageRating:
-      normalizeCertification(
-        rawCertification
-      ),
+    ageRating: certification,
   };
 }

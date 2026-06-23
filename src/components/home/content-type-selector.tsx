@@ -1,38 +1,11 @@
 import { ContentType } from "@/services/tmdb/types";
 
+import { CONTENT_OPTIONS } from "@/constants/home";
+
 type Props = {
   contentType: ContentType;
   setContentType: (value: ContentType) => void;
 };
-
-const CONTENT_OPTIONS: {
-  value: ContentType;
-  label: string;
-  icon: string;
-  description: string;
-}[] = [
-  {
-    value: "movie",
-    label: "Filmes",
-    icon: "🎬",
-    description:
-      "Recomendações de filmes para assistir agora.",
-  },
-  {
-    value: "tv",
-    label: "Séries",
-    icon: "📺",
-    description:
-      "Séries para começar sem ficar rolando catálogo.",
-  },
-  {
-    value: "anime",
-    label: "Animes",
-    icon: "🌸",
-    description:
-      "Animes populares para descobrir seu próximo vício.",
-  },
-];
 
 export function ContentTypeSelector({
   contentType,

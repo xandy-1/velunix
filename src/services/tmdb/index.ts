@@ -6,7 +6,7 @@
 
 export { discoverMovies } from "./discover";
 
-export { getGenres } from "./genres";
+export {getGenres, getGenresByType, } from "./genres";
 
 export { getContentDetails } from "./details";
 

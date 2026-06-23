@@ -2,15 +2,27 @@ import { Genre } from "@/types/movie";
 
 import { tmdbFetch } from "./client";
 
-import { GenresResponse } from "./types";
+import {
+  ContentType,
+  GenresResponse,
+} from "./types";
 
-export async function getGenres(): Promise<
-  Genre[]
-> {
+export async function getGenresByType(
+  contentType: ContentType
+): Promise<Genre[]> {
+  const tmdbType =
+    contentType === "movie"
+      ? "movie"
+      : "tv";
+
   const data =
     await tmdbFetch<GenresResponse>(
-      "/genre/movie/list?language=pt-BR"
+      `/genre/${tmdbType}/list?language=pt-BR`
     );
 
   return data.genres;
+}
+
+export async function getGenres(): Promise<Genre[]> {
+  return getGenresByType("movie");
 }
